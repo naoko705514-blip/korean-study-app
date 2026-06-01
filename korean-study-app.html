@@ -498,7 +498,7 @@ function dedupeItems() {
 
 async function loadVocabFromGitHub() {
   try {
-    const res = await fetch("https://raw.githubusercontent.com/naoko705514-blip/korean-study-app/main/vocab%20all.json?t=" + Date.now());
+    const res = await fetch("https://raw.githubusercontent.com/naoko705514-blip/korean-study-app/main/vocab_all.json?t=" + Date.now());
     if (!res.ok) throw new Error("読み込み失敗: " + res.status);
     const data = await res.json();
     const init = data.map((it,i) => ({...it, id:`${Date.now()}-${i}`, reviewCount:0, nextReview:null, lastReviewed:null}));
@@ -609,7 +609,7 @@ function startQuiz(type, sessionMode) {
     document.getElementById("answer-input").value = "";
     document.getElementById("submit-btn").disabled = true;
   } else {
-    currentQuiz = { question:`「${currentItem.korean||}」${currentItem.reading?`（${currentItem.reading}）`:""}の意味は？`, answer:currentItem.japanese||"", type:"単語" };
+    currentQuiz = { question:`「${currentItem.korean||""}」${currentItem.reading?`（${currentItem.reading}）`:""}の意味は？`, answer:currentItem.japanese||"", type:"単語" };
     document.getElementById("quiz-type-tag").textContent = "🔤 単語";
     document.getElementById("question-text").textContent = currentQuiz.question;
     document.getElementById("hint-text").classList.add("hidden");
@@ -905,7 +905,7 @@ function runPaceStep() {
       document.getElementById("answer-input").value = "";
       document.getElementById("submit-btn").disabled = true;
     } else {
-      currentQuiz = { question:`「${currentItem.korean||}」${currentItem.reading?`（${currentItem.reading}）`:""}の意味は？`, answer:currentItem.japanese||"", type:"単語" };
+      currentQuiz = { question:`「${currentItem.korean||""}」${currentItem.reading?`（${currentItem.reading}）`:""}の意味は？`, answer:currentItem.japanese||"", type:"単語" };
       document.getElementById("quiz-type-tag").textContent = "🔤 単語";
       document.getElementById("question-text").textContent = currentQuiz.question;
       document.getElementById("hint-text").classList.add("hidden");
