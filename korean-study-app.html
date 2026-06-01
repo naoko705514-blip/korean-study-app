@@ -134,6 +134,7 @@ body { font-family: 'Noto Sans JP', sans-serif; background: linear-gradient(135d
     <button class="secondary-btn" id="vocab-list-btn" onclick="showVocab()" style="display:none">📋 学習リストを見る (<span id="vocab-count">0</span>件)</button>
     <div class="import-box">
       <p style="font-size:13px;color:#888;margin-bottom:10px">📌 このチャットに教材の写真を送ると、貼り付け用のJSONが返ってきます</p>
+      <button onclick="loadVocabFromGitHub()" style="width:100%;background:#2d6a4f;color:#fff;border:none;border-radius:16px;padding:14px;font-size:15px;font-weight:700;cursor:pointer;margin-bottom:10px">☁️ 単語データを読み込む（推奨）</button>
       <textarea id="json-input" rows="4" placeholder='[{"type":"word","korean":"안녕하세요","reading":"アンニョンハセヨ","japanese":"こんにちは"}]'></textarea>
       <button onclick="document.getElementById('json-input').value=''" style="width:100%;background:#fff;color:#888;border:1px solid #ddd;border-radius:12px;padding:10px;font-size:13px;cursor:pointer;margin-bottom:8px">✕ 入力欄をクリア</button>
       <button class="purple-btn" onclick="importJSON()">📥 登録する</button>
@@ -379,6 +380,24 @@ function dedupeItems() {
   save();
   updateHomeUI();
   alert(`重複を削除しました。${before}件 → ${items.length}件`);
+}
+
+async function loadVocabFromGitHub() {
+  try {
+    const res = await fetch("https://naoko705514-blip.github.io/korean-study-app/vocab.json?t=" + Date.now());
+    if (!res.ok) throw new Error("読み込み失敗");
+    const data = await res.json();
+    const init = data.map((it,i) => ({...it, id:`${Date.now()}-${i}`, reviewCount:0, nextReview:null, lastReviewed:null}));
+    // merge without duplicates
+    const existing = new Set(items.map(it => (it.korean||it.pattern||"")));
+    const newItems = init.filter(it => !existing.has(it.korean||it.pattern||""));
+    items = [...items, ...newItems];
+    await save();
+    updateHomeUI();
+    alert(`✅ ${newItems.length}件を追加しました！`);
+  } catch(e) {
+    alert("読み込みに失敗しました。vocab.jsonがGitHubにアップされているか確認してください。");
+  }
 }
 
 function importJSON() {
