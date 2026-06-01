@@ -502,7 +502,7 @@ function dedupeItems() {
 
 async function loadVocabFromGitHub() {
   try {
-    const res = await fetch("https://raw.githubusercontent.com/naoko705514-blip/korean-study-app/main/vocab%20all.json?t=" + Date.now());
+    const res = await fetch("https://raw.githubusercontent.com/naoko705514-blip/korean-study-app/main/vocab.json?t=" + Date.now());
     if (!res.ok) throw new Error("読み込み失敗: " + res.status);
     const data = await res.json();
     const init = data.map((it,i) => ({...it, id:`${Date.now()}-${i}`, reviewCount:0, nextReview:null, lastReviewed:null}));
@@ -584,7 +584,50 @@ function pickItem(type) {
 
 function makeChoices(correctItem, type) {
   const correct = type==="word" ? correctItem.japanese : correctItem.explanation||correctItem.japanese||"";
-  const pool = items.filter(i => { const v=type==="word"?i.japanese:i.explanation||i.japanese||""; return v&&v!==correct; });
+  
+  // カテゴリーが同じものから選択肢を作る
+  const cat = correctItem.category || "noun";
+  
+  // 同カテゴリーのプール、なければ全体から
+  let pool = items.filter(i => {
+    const v = type==="word" ? i.japanese : i.explanation||i.japanese||"";
+    return v && v !== correct && i.category === cat;
+  });
+  
+  // 同カテゴリーが3つ未満なら近いカテゴリーで補完
+  if (pool.length < 3) {
+    const related = {
+      verb: ["verb_conj","verb_past"],
+      verb_conj: ["verb","verb_past"],
+      verb_past: ["verb","verb_conj"],
+      adjective: ["adverb","verb"],
+      noun: ["place","food","clothes","furniture","person"],
+      place: ["noun","transport"],
+      food: ["noun","clothes"],
+      clothes: ["noun","food"],
+      time: ["number","counter"],
+      number: ["counter","time"],
+      counter: ["number","time"],
+      adverb: ["particle","expression"],
+      particle: ["adverb","expression"],
+      expression: ["adverb","particle"],
+    };
+    const relCats = related[cat] || ["noun"];
+    const extra = items.filter(i => {
+      const v = type==="word" ? i.japanese : i.explanation||i.japanese||"";
+      return v && v !== correct && relCats.includes(i.category);
+    });
+    pool = [...pool, ...extra];
+  }
+  
+  // それでも足りなければ全体から
+  if (pool.length < 3) {
+    pool = items.filter(i => {
+      const v = type==="word" ? i.japanese : i.explanation||i.japanese||"";
+      return v && v !== correct;
+    });
+  }
+  
   const wrongs = pool.sort(()=>Math.random()-0.5).slice(0,3).map(i=>type==="word"?i.japanese:i.explanation||i.japanese||"");
   while (wrongs.length<3) wrongs.push(["わかりません","ありません","ちがいます"][wrongs.length]);
   return {choices:[...wrongs,correct].sort(()=>Math.random()-0.5), correct};
@@ -741,46 +784,113 @@ function startGrammarMode(sessionMode) {
 
 function autoResizeTA(el) { el.style.height = "auto"; el.style.height = el.scrollHeight + "px"; }
 
-function checkCompositions() {
+async function checkCompositions() {
   let filled = 0;
+  const answers = [];
   for (let i = 0; i < 3; i++) {
     const val = document.getElementById(`comp-input-${i}`)?.value.trim();
+    answers.push(val || "");
     if (val) filled++;
   }
   if (filled === 0) { alert("少なくとも1問答えてください"); return; }
 
-  // 簡易フィードバック：입력済みかどうかで〇/△
-  let resultLines = [];
+  // ボタンをローディング状態に
+  const btn = document.getElementById("grammar-check-btn");
+  btn.textContent = "🤖 AIが添削中...";
+  btn.disabled = true;
+
+  // 未入力は先にマーク
   for (let i = 0; i < 3; i++) {
-    const val = document.getElementById(`comp-input-${i}`)?.value.trim();
-    const fb = document.getElementById(`comp-fb-${i}`);
-    const inp = document.getElementById(`comp-input-${i}`);
-    if (val) {
-      inp.classList.add("correct-input");
-      fb.textContent = "✅ 入力されました！文章を確認してみましょう";
-      fb.className = "composition-feedback show ok";
-      resultLines.push(`${i+1}. ${val}`);
-    } else {
+    if (!answers[i]) {
+      const fb = document.getElementById(`comp-fb-${i}`);
+      const inp = document.getElementById(`comp-input-${i}`);
       inp.classList.add("wrong-input");
       fb.textContent = "⬜ 未入力";
       fb.className = "composition-feedback show ng";
     }
   }
 
-  // SRS更新（3問中2問以上入力で正解扱い）
-  const isCorrect = filled >= 2;
+  // Claude APIで添削
+  const pattern = currentGrammarItem.pattern || "";
+  const explanation = currentGrammarItem.explanation || "";
+  const example = currentGrammarItem.example || "";
+  const prompts = compositionPrompts.map((p,i) => `問題${i+1}: ${p.jp}`).join("
+");
+  const userAnswers = answers.map((a,i) => `回答${i+1}: ${a || "（未回答）"}`).join("
+");
+
+  const systemPrompt = `あなたは韓国語の先生です。学習者の韓国語作文を添削してください。
+文法パターン「${pattern}」（${explanation}）の練習問題です。
+模範例: ${example}
+
+以下のルールで添削してください：
+- 各回答に対して「✅ 正解」「🔶 惜しい」「❌ 間違い」のどれかを付ける
+- 間違いや改善点があれば正しい形を示す
+- 日本語で短く（1〜2文）コメントする
+- 未回答は「（未回答）」とだけ書く
+- JSONで返す: [{"result":"ok"|"close"|"wrong", "comment":"...", "correction":"正しい韓国語（あれば）"}] の配列（3要素）`;
+
+  let results = [{result:"ok",comment:"",correction:""},{result:"ok",comment:"",correction:""},{result:"ok",comment:"",correction:""}];
+
+  try {
+    const res = await fetch("https://api.anthropic.com/v1/messages", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        model: "claude-sonnet-4-20250514",
+        max_tokens: 1000,
+        system: systemPrompt,
+        messages: [{ role: "user", content: `${prompts}
+
+${userAnswers}` }]
+      })
+    });
+    const data = await res.json();
+    const text = data.content?.[0]?.text || "";
+    const jsonMatch = text.match(/\[.*\]/s);
+    if (jsonMatch) results = JSON.parse(jsonMatch[0]);
+  } catch(e) {
+    console.error("API error:", e);
+  }
+
+  // フィードバック表示
+  let correctCount = 0;
+  for (let i = 0; i < 3; i++) {
+    if (!answers[i]) continue;
+    const r = results[i] || {result:"ok",comment:"",correction:""};
+    const fb = document.getElementById(`comp-fb-${i}`);
+    const inp = document.getElementById(`comp-input-${i}`);
+    inp.classList.remove("correct-input","wrong-input");
+    if (r.result === "ok") {
+      inp.classList.add("correct-input");
+      fb.innerHTML = `✅ 正解！ ${r.comment}`;
+      fb.className = "composition-feedback show ok";
+      correctCount++;
+    } else if (r.result === "close") {
+      inp.classList.add("wrong-input");
+      fb.innerHTML = `🔶 惜しい！ ${r.comment}${r.correction ? `<br>→ <strong>${r.correction}</strong>` : ""}`;
+      fb.className = "composition-feedback show ng";
+    } else {
+      inp.classList.add("wrong-input");
+      fb.innerHTML = `❌ ${r.comment}${r.correction ? `<br>→ <strong>${r.correction}</strong>` : ""}`;
+      fb.className = "composition-feedback show ng";
+    }
+  }
+
+  // SRS更新（入力した問題のうち半分以上正解で正解扱い）
+  const isCorrect = filled > 0 && correctCount >= Math.ceil(filled / 2);
   const nc = isCorrect ? (currentGrammarItem.reviewCount||0)+1 : Math.max(0,(currentGrammarItem.reviewCount||0)-1);
   items = items.map(it => it.id===currentGrammarItem.id ? {...it, reviewCount:nc, nextReview:nextReviewDate(nc), lastReviewed:Date.now()} : it);
   save();
   stats.total++; stats.correct += isCorrect?1:0; stats.streak = isCorrect ? stats.streak+1 : 0;
   saveStats();
 
-  document.getElementById("grammar-check-btn").classList.add("hidden");
+  btn.classList.add("hidden");
   document.getElementById("grammar-result-area").classList.remove("hidden");
   const card = document.getElementById("grammar-result-card");
   card.className = "result-card " + (isCorrect ? "result-correct" : "result-wrong");
   document.getElementById("grammar-result-icon").textContent = isCorrect ? "⭕️" : "❌";
-  document.getElementById("grammar-result-label").textContent = isCorrect ? `${filled}/3 問 入力しました！` : "未入力が多いです";
+  document.getElementById("grammar-result-label").textContent = `${correctCount}/${filled} 問 正解！`;
   document.getElementById("grammar-result-detail").innerHTML =
     `<strong>${currentGrammarItem.pattern}</strong><br>${currentGrammarItem.explanation || ""}<br><br>` +
     (currentGrammarItem.example ? `💬 模範例: <strong>${currentGrammarItem.example}</strong>` : "");
