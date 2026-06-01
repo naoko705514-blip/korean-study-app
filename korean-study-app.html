@@ -167,8 +167,7 @@ body { font-family: 'Noto Sans JP', sans-serif; background: linear-gradient(135d
       <button class="quiz-btn" onclick="startQuiz('writing')"><span class="quiz-btn-icon">✍️</span><span class="quiz-btn-label">書き取り</span><span class="due-badge hidden" id="badge-writing"></span></button>
     </div>
 
-    <p class="section-title">🎯 学習ペースで始める</p>
-    <button class="green-btn" onclick="showPaceSelect()">📅 ペース設定で学習する</button>
+    <button class="primary-btn" onclick="startTodaySession()" id="today-btn" style="font-size:18px;padding:18px;margin-bottom:20px">▶️ 今日の学習を始める</button>
 
     <div class="special-header">
       <p class="section-title" style="margin-bottom:0">特訓モード</p>
@@ -386,6 +385,11 @@ body { font-family: 'Noto Sans JP', sans-serif; background: linear-gradient(135d
       <p style="font-size:13px;color:#888;margin-bottom:10px">🚀 GitHubに自動アップロード</p>
       <button onclick="autoDeploy()" style="width:100%;background:#24292e;color:#fff;border:none;border-radius:12px;padding:12px;font-size:14px;font-weight:700;cursor:pointer">⬆️ 今すぐアップロード</button>
       <p style="font-size:11px;color:#aaa;margin-top:8px;text-align:center">アプリを更新したあとに押してください</p>
+    </div>
+    <div style="background:#fff;border-radius:16px;padding:16px;margin-bottom:12px;box-shadow:0 2px 8px rgba(0,0,0,0.06)">
+      <p style="font-size:13px;color:#888;margin-bottom:10px">🎯 学習ペース設定</p>
+      <div id="settings-pace-display" style="font-size:15px;font-weight:700;color:#c0392b;margin-bottom:10px"></div>
+      <button onclick="showPaceSelect()" style="width:100%;background:#2d6a4f;color:#fff;border:none;border-radius:12px;padding:12px;font-size:14px;font-weight:700;cursor:pointer">⚙️ ペースを変更する</button>
     </div>
     <div style="background:#fff;border-radius:16px;padding:16px;box-shadow:0 2px 8px rgba(0,0,0,0.06)">
       <p style="font-size:13px;color:#888;margin-bottom:10px">⚠️ データをリセット</p>
@@ -793,6 +797,12 @@ function checkCompositions() {
 function nextGrammar() { startGrammarMode(false); }
 
 // ── Pace ──
+function startTodaySession() {
+  const saved = localStorage.getItem("kr_pace") || "normal";
+  selectedPace = saved;
+  startPaceSession();
+}
+
 function showPaceSelect() {
   showScreen("pace");
   // 前回のペースを反映
@@ -1093,6 +1103,10 @@ function updateHomeUI() {
   document.getElementById("vocab-count").textContent = items.length;
   document.getElementById("vocab-list-btn").style.display = items.length?"block":"none";
   document.getElementById("sp-streak-label").textContent = `🔥 ${parseInt(spStreak)||0}連続`;
+  const paceLabels2 = {light:"ゆっくり", normal:"標準", intensive:"集中", custom:"カスタム"};
+  const sp = localStorage.getItem("kr_pace") || "normal";
+  const todayBtn = document.getElementById("today-btn");
+  if (todayBtn) todayBtn.textContent = `▶️ 今日の学習を始める（${paceLabels2[sp]}ペース）`;
   const wd=items.filter(i=>i.type==="word"&&isDue(i)).length;
   const gd=items.filter(i=>i.type==="grammar"&&isDue(i)).length;
   setBadge("badge-word",wd); setBadge("badge-grammar",gd); setBadge("badge-writing",due);
@@ -1132,6 +1146,10 @@ function showSettings() {
   const hasToken = !!localStorage.getItem("gh_token");
   document.getElementById("gh-token-input").placeholder = hasToken ? "✅ 保存済み（変更する場合は入力）" : "ghp_xxxx...";
   document.getElementById("settings-btn").classList.add("hidden");
+  const paceLabels = {light:"🌱 ゆっくり", normal:"🔥 標準", intensive:"⚡ 集中", custom:"⚙️ カスタム"};
+  const savedPace = localStorage.getItem("kr_pace") || "normal";
+  const el = document.getElementById("settings-pace-display");
+  if (el) el.textContent = "現在: " + (paceLabels[savedPace] || "標準") + "ペース";
 }
 
 function copyUID() {
