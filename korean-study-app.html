@@ -318,33 +318,52 @@ async function fbSet(key, val) {
 
 // ── Storage ──
 async function load() {
-  // まずlocalStorageから即時表示
+  // まずlocalStorageから即時表示（確実に動く）
   try {
     const r1 = localStorage.getItem("kr_items"); if (r1) items = JSON.parse(r1);
     const r2 = localStorage.getItem("kr_stats"); if (r2) stats = JSON.parse(r2);
     const r3 = localStorage.getItem("kr_spst");  if (r3) spStreak = parseInt(r3)||0;
   } catch(e) {}
   updateHomeUI();
-  // Firebaseから最新データを取得して上書き
-  const fi = await fbGet("items");
-  const fs = await fbGet("stats");
-  const fp = await fbGet("spst");
-  if (fi) { items = fi; localStorage.setItem("kr_items", JSON.stringify(fi)); }
-  if (fs) { stats = fs; localStorage.setItem("kr_stats", JSON.stringify(fs)); }
-  if (fp) { spStreak = fp; localStorage.setItem("kr_spst", String(fp)); }
+
+  // Firebaseから最新データを取得（localStorageより件数が多い場合のみ上書き）
+  try {
+    const fi = await fbGet("items");
+    const fs = await fbGet("stats");
+    const fp = await fbGet("spst");
+    if (fi && Array.isArray(fi) && fi.length > items.length) {
+      items = fi;
+      localStorage.setItem("kr_items", JSON.stringify(fi));
+    }
+    if (fs) { stats = fs; localStorage.setItem("kr_stats", JSON.stringify(fs)); }
+    if (fp) { spStreak = fp; localStorage.setItem("kr_spst", String(fp)); }
+    // FirebaseがlocalStorageより古い場合は上書き保存
+    if (items.length > 0 && (!fi || fi.length < items.length)) {
+      fbSet("items", items);
+    }
+  } catch(e) {}
   updateHomeUI();
 }
-const save = () => {
+
+const save = async () => {
+  // localStorageに必ず保存（失敗しない）
   localStorage.setItem("kr_items", JSON.stringify(items));
-  fbSet("items", items);
+  // Firebaseにも保存（失敗してもlocalStorageは安全）
+  try {
+    await fbSet("items", items);
+  } catch(e) {
+    console.warn("Firebase save failed, data safe in localStorage");
+  }
 };
-const saveStats = () => {
+
+const saveStats = async () => {
   localStorage.setItem("kr_stats", JSON.stringify(stats));
-  fbSet("stats", stats);
+  try { await fbSet("stats", stats); } catch(e) {}
 };
-const saveSpSt = () => {
+
+const saveSpSt = async () => {
   localStorage.setItem("kr_spst", String(spStreak));
-  fbSet("spst", spStreak);
+  try { await fbSet("spst", spStreak); } catch(e) {}
 };
 
 // ── Import ──
