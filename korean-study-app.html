@@ -178,7 +178,6 @@ body { font-family: 'Noto Sans JP', sans-serif; background: linear-gradient(135d
     <div class="quiz-card">
       <div class="quiz-type-tag" style="background:#f0e0ff;color:#7b2d8b">特訓</div>
       <p class="question-text" id="sp-question" style="margin-top:14px"></p>
-      <button onclick="speak(currentSpecialQ?.a||'')" style="margin-top:10px;background:#f3e5f5;border:2px solid #ce93d8;border-radius:20px;padding:10px 24px;font-size:18px;cursor:pointer;width:100%">🔊 正解の発音を聞く</button>
       <p class="hint" id="sp-hint" style="margin-top:10px"></p>
     </div>
     <div class="ref-box hidden" id="counter-ref">
@@ -641,7 +640,7 @@ function submitSpecial() {
   card.className = "result-card " + (isCorrect?"result-correct":"result-wrong");
   document.getElementById("sp-result-icon").textContent = isCorrect?"⭕️":"❌";
   document.getElementById("sp-result-label").textContent = isCorrect?"正解！":"不正解";
-  document.getElementById("sp-correct-answer").innerHTML = `正解: <strong>${currentSpecialQ.a}</strong> <button onclick="speak(currentSpecialQ.a)" style="background:#f3e5f5;border:2px solid #ce93d8;border-radius:12px;padding:4px 12px;font-size:16px;cursor:pointer;margin-left:8px">🔊</button>`;
+  document.getElementById("sp-correct-answer").innerHTML = `正解: <strong>${currentSpecialQ.a}</strong>`;
   document.getElementById("sp-info").innerHTML = `特訓 <span class="purple-badge">🔥 ${spStreak}連続</span>`;
 }
 function nextSpecial() { startSpecial(currentSpecialCat); }
