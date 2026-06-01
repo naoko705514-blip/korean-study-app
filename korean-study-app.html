@@ -135,6 +135,7 @@ body { font-family: 'Noto Sans JP', sans-serif; background: linear-gradient(135d
     <div class="import-box">
       <p style="font-size:13px;color:#888;margin-bottom:10px">📌 このチャットに教材の写真を送ると、貼り付け用のJSONが返ってきます</p>
       <textarea id="json-input" rows="4" placeholder='[{"type":"word","korean":"안녕하세요","reading":"アンニョンハセヨ","japanese":"こんにちは"}]'></textarea>
+      <button onclick="document.getElementById('json-input').value=''" style="width:100%;background:#fff;color:#888;border:1px solid #ddd;border-radius:12px;padding:10px;font-size:13px;cursor:pointer;margin-bottom:8px">✕ 入力欄をクリア</button>
       <button class="purple-btn" onclick="importJSON()">📥 登録する</button>
       <button onclick="dedupeItems()" style="width:100%;background:#fff;color:#e65100;border:2px solid #ffe0b2;border-radius:16px;padding:12px;font-size:14px;font-weight:700;cursor:pointer;margin-top:8px">🧹 重複データを削除する</button>
     </div>
@@ -145,7 +146,8 @@ body { font-family: 'Noto Sans JP', sans-serif; background: linear-gradient(135d
     <div class="srs-info" id="srs-info"></div>
     <div class="quiz-card">
       <div class="quiz-type-tag" id="quiz-type-tag"></div>
-      <p class="question-text" id="question-text"></p>
+      <p class="question-text" id="question-text" onclick="speakQuestion()" style="cursor:pointer"></p>
+      <p style="font-size:11px;color:#ccc;margin-top:6px">タップで読み上げ 🔊</p>
       <p class="hint hidden" id="hint-text"></p>
     </div>
     <!-- 4択 -->
@@ -216,6 +218,17 @@ body { font-family: 'Noto Sans JP', sans-serif; background: linear-gradient(135d
       <button onclick="applyUID()" style="width:100%;background:#7b2d8b;color:#fff;border:none;border-radius:12px;padding:12px;font-size:14px;font-weight:700;cursor:pointer">🔄 このIDで同期する</button>
     </div>
 
+    <div style="background:#fff;border-radius:16px;padding:16px;margin-bottom:12px;box-shadow:0 2px 8px rgba(0,0,0,0.06)">
+      <p style="font-size:13px;color:#888;margin-bottom:10px">🔑 GitHub Personal Access Token</p>
+      <input id="gh-token-input" type="password" placeholder="ghp_xxxx..." style="width:100%;border:2px solid #f5c6c2;border-radius:12px;padding:12px;font-size:14px;outline:none;box-sizing:border-box;margin-bottom:8px">
+      <button onclick="saveGHToken()" style="width:100%;background:#24292e;color:#fff;border:none;border-radius:12px;padding:12px;font-size:14px;font-weight:700;cursor:pointer;margin-bottom:8px">💾 トークンを保存</button>
+      <p style="font-size:11px;color:#aaa;text-align:center">端末にのみ保存されます。GitHubには送信されません。</p>
+    </div>
+    <div style="background:#fff;border-radius:16px;padding:16px;margin-bottom:12px;box-shadow:0 2px 8px rgba(0,0,0,0.06)">
+      <p style="font-size:13px;color:#888;margin-bottom:10px">🚀 GitHubに自動アップロード</p>
+      <button onclick="autoDeploy()" style="width:100%;background:#24292e;color:#fff;border:none;border-radius:12px;padding:12px;font-size:14px;font-weight:700;cursor:pointer">⬆️ 今すぐアップロード</button>
+      <p style="font-size:11px;color:#aaa;margin-top:8px;text-align:center">アプリを更新したあとに押してください</p>
+    </div>
     <div style="background:#fff;border-radius:16px;padding:16px;box-shadow:0 2px 8px rgba(0,0,0,0.06)">
       <p style="font-size:13px;color:#888;margin-bottom:10px">⚠️ データをリセット</p>
       <button onclick="resetData()" style="width:100%;background:#fff;color:#e53935;border:2px solid #ffcdd2;border-radius:12px;padding:12px;font-size:14px;font-weight:700;cursor:pointer">🗑️ すべてのデータを削除</button>
@@ -232,12 +245,54 @@ const isDue = item => !item.nextReview || Date.now() >= item.nextReview;
 const daysUntil = ts => Math.ceil((ts - Date.now()) / 86400000);
 const norm = s => s.trim().replace(/\s+/g, " ");
 
+// ── Speech ──
+function speak(text) {
+  if (!('speechSynthesis' in window)) return;
+  window.speechSynthesis.cancel();
+  const utter = new SpeechSynthesisUtterance(text);
+  utter.lang = 'ko-KR';
+  utter.rate = 0.9;
+  // try to find Korean voice
+  const voices = window.speechSynthesis.getVoices();
+  const koVoice = voices.find(v => v.lang.startsWith('ko'));
+  if (koVoice) utter.voice = koVoice;
+  window.speechSynthesis.speak(utter);
+}
+
+// voices may load async
+window.speechSynthesis.onvoiceschanged = () => window.speechSynthesis.getVoices();
+
 // ── State ──
 let items = [], stats = {streak:0, total:0, correct:0}, spStreak = 0;
 let currentItem = null, currentQuizType = "", currentQuiz = null;
 let currentSpecialCat = "", currentSpecialQ = null;
 
 // ── Firebase config ──
+const GITHUB_REPO = "naoko705514-blip/korean-study-app";
+const GITHUB_FILE = "korean-study-app.html";
+
+async function deployToGitHub() {
+  const token = localStorage.getItem("gh_token");
+  if (!token) { alert("設定画面でGitHub Personal Access Tokenを入力してください"); return false; }
+  try {
+    const infoRes = await fetch(`https://api.github.com/repos/${GITHUB_REPO}/contents/${GITHUB_FILE}`, {
+      headers: { "Authorization": `token ${token}`, "Accept": "application/vnd.github.v3+json" }
+    });
+    const info = await infoRes.json();
+    const sha = info.sha;
+    const html = document.documentElement.outerHTML;
+    const b64 = btoa(unescape(encodeURIComponent(html)));
+    const res = await fetch(`https://api.github.com/repos/${GITHUB_REPO}/contents/${GITHUB_FILE}`, {
+      method: "PUT",
+      headers: { "Authorization": `token ${token}`, "Accept": "application/vnd.github.v3+json", "Content-Type": "application/json" },
+      body: JSON.stringify({ message: "Update app", content: b64, sha })
+    });
+    const data = await res.json();
+    if (data.commit) return true;
+    return false;
+  } catch(e) { return false; }
+}
+
 const FB_URL = "https://korean-study-266ca-default-rtdb.asia-southeast1.firebasedatabase.app";
 // ユーザーIDをlocalStorageで管理（端末固有だが同じIDでログインすれば共有可）
 if (!localStorage.getItem("kr_uid")) {
@@ -410,6 +465,9 @@ function startQuiz(type) {
     };
     document.getElementById("quiz-type-tag").textContent = "✍️ 書き取り";
     document.getElementById("question-text").textContent = currentQuiz.question;
+  // auto-speak Korean text in question
+  const koreanInQ = currentItem.korean || currentItem.pattern || "";
+  if (koreanInQ) setTimeout(() => speak(koreanInQ), 300);
     document.getElementById("hint-text").classList.add("hidden");
     document.getElementById("choices-area").classList.add("hidden");
     document.getElementById("writing-area").classList.remove("hidden");
@@ -496,10 +554,16 @@ function showResult(isCorrect) {
   card.className = "result-card " + (isCorrect?"result-correct":"result-wrong");
   document.getElementById("result-icon").textContent = isCorrect?"⭕️":"❌";
   document.getElementById("result-label").textContent = isCorrect?"正解！":"不正解";
-  document.getElementById("correct-answer-text").innerHTML = `正解: <strong>${currentQuiz.answer}</strong>`;
+  document.getElementById("correct-answer-text").innerHTML = `正解: <strong>${currentQuiz.answer}</strong> <span onclick="speak('${currentQuiz.answer.replace(/'/g,"\'")}')" style="cursor:pointer;font-size:18px">🔊</span>`;
+  setTimeout(() => speak(currentQuiz.answer), 400);
   const updatedItem = items.find(i=>i.id===currentItem.id);
   const nd = updatedItem?.nextReview ? daysUntil(updatedItem.nextReview) : 1;
   document.getElementById("next-review-text").textContent = `📅 次の復習: ${nd<=1?"明日":nd+"日後"}`;
+}
+
+function speakQuestion() {
+  const korean = currentItem?.korean || currentItem?.pattern || "";
+  if (korean) speak(korean);
 }
 
 function nextQuiz() { startQuiz(currentQuizType); }
@@ -512,6 +576,7 @@ function startSpecial(cat) {
   const labels = {time:"🕐 時刻",date:"📅 年月日",money:"💰 お金",sino:"🔢 漢数字",native:"🔤 固有数字",counter:"📏 助数詞"};
   document.getElementById("sp-info").innerHTML = `${labels[cat]} <span class="purple-badge">🔥 ${spStreak}連続</span>`;
   document.getElementById("sp-question").textContent = currentSpecialQ.q;
+  setTimeout(() => speak(currentSpecialQ.a), 300);
   document.getElementById("sp-hint").textContent = "💡 " + currentSpecialQ.hint;
   const ref = document.getElementById("counter-ref");
   if (cat==="counter") {
@@ -537,7 +602,8 @@ function submitSpecial() {
   card.className = "result-card " + (isCorrect?"result-correct":"result-wrong");
   document.getElementById("sp-result-icon").textContent = isCorrect?"⭕️":"❌";
   document.getElementById("sp-result-label").textContent = isCorrect?"正解！":"不正解";
-  document.getElementById("sp-correct-answer").innerHTML = `正解: <strong>${currentSpecialQ.a}</strong>`;
+  document.getElementById("sp-correct-answer").innerHTML = `正解: <strong>${currentSpecialQ.a}</strong> <span onclick="speak(currentSpecialQ.a)" style="cursor:pointer;font-size:18px">🔊</span>`;
+  setTimeout(() => speak(currentSpecialQ.a), 400);
   document.getElementById("sp-info").innerHTML = `特訓 <span class="purple-badge">🔥 ${spStreak}連続</span>`;
 }
 function nextSpecial() { startSpecial(currentSpecialCat); }
@@ -591,9 +657,34 @@ function setBadge(id,n) {
 }
 
 // ── Settings ──
+function saveGHToken() {
+  const token = document.getElementById("gh-token-input").value.trim();
+  if (!token) { alert("トークンを入力してください"); return; }
+  localStorage.setItem("gh_token", token);
+  document.getElementById("gh-token-input").value = "";
+  alert("✅ トークンを保存しました！");
+}
+
+async function autoDeploy() {
+  if (!confirm("GitHubにアップロードしますか？")) return;
+  const btn = event.target;
+  btn.textContent = "アップロード中…";
+  btn.disabled = true;
+  const ok = await deployToGitHub();
+  if (ok) {
+    alert("✅ アップロード完了！\n1〜2分後に反映されます。");
+  } else {
+    alert("❌ アップロードに失敗しました。\nトークンの有効期限を確認してください。");
+  }
+  btn.textContent = "⬆️ 今すぐアップロード";
+  btn.disabled = false;
+}
+
 function showSettings() {
   showScreen("settings");
   document.getElementById("uid-display").textContent = UID;
+  const hasToken = !!localStorage.getItem("gh_token");
+  document.getElementById("gh-token-input").placeholder = hasToken ? "✅ 保存済み（変更する場合は入力）" : "ghp_xxxx...";
   document.getElementById("settings-btn").classList.add("hidden");
 }
 
