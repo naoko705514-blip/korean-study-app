@@ -250,13 +250,15 @@ const norm = s => s.trim().replace(/\s+/g, " ");
 // ── Speech ──
 function speak(text) {
   if (!('speechSynthesis' in window)) return;
+  // Extract only Korean characters and spaces
+  const koreanOnly = text.replace(/[^가-힣ᄀ-ᇿ㄰-㆏\s]/g, "").trim();
+  if (!koreanOnly) return;
   window.speechSynthesis.cancel();
-  const utter = new SpeechSynthesisUtterance(text);
+  const utter = new SpeechSynthesisUtterance(koreanOnly);
   utter.lang = 'ko-KR';
-  utter.rate = 0.9;
-  // try to find Korean voice
+  utter.rate = 0.85;
   const voices = window.speechSynthesis.getVoices();
-  const koVoice = voices.find(v => v.lang.startsWith('ko'));
+  const koVoice = voices.find(v => v.lang === 'ko-KR') || voices.find(v => v.lang.startsWith('ko'));
   if (koVoice) utter.voice = koVoice;
   window.speechSynthesis.speak(utter);
 }
@@ -599,7 +601,7 @@ function showResult(isCorrect) {
 }
 
 function speakQuestion() {
-  const korean = currentItem?.korean || currentItem?.pattern || "";
+  const korean = currentItem?.korean || currentItem?.pattern || currentItem?.example || "";
   if (korean) speak(korean);
 }
 
