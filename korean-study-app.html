@@ -358,6 +358,22 @@ body { font-family: 'Noto Sans JP', sans-serif; background: linear-gradient(135d
   <!-- VOCAB -->
   <div class="content hidden" id="screen-vocab">
     <p class="section-title">学習リスト</p>
+    <div style="display:flex;gap:8px;margin-bottom:10px">
+      <input id="vocab-search" style="flex:1;border:2px solid #f5c6c2;border-radius:12px;padding:9px 12px;font-size:14px;outline:none;font-family:inherit" placeholder="🔍 検索..." oninput="filterVocab()">
+      <select id="vocab-cat-filter" style="border:2px solid #f5c6c2;border-radius:12px;padding:9px 8px;font-size:12px;outline:none;background:#fff" onchange="filterVocab()">
+        <option value="">全て</option>
+        <option value="grammar">📖 文法</option>
+        <option value="verb">動詞</option>
+        <option value="adjective">形容詞</option>
+        <option value="noun">名詞</option>
+        <option value="food">食べ物</option>
+        <option value="place">場所</option>
+        <option value="time">時間</option>
+        <option value="expression">表現</option>
+        <option value="number">数字</option>
+      </select>
+    </div>
+    <p id="vocab-count-disp" style="font-size:12px;color:#aaa;margin-bottom:8px"></p>
     <div id="vocab-list"></div>
   </div>
 
@@ -733,14 +749,76 @@ function nextQuiz() { startQuiz(currentQuizType); }
 function makeCompositionPrompts(item) {
   const p = item.pattern || item.korean || "";
   const ex = item.example || "";
-
-  // 汎用的な作文プロンプト3問（文法ごとに違うお題）
-  const templates = [
+  const PATTERN_PROMPTS = {
+    "고 싶어요": [
+      { jp: "「韓国に行きたいです」を韓国語で", hint: "한국에..." },
+      { jp: "「コーヒーを飲みたいです」を韓国語で", hint: "커피를..." },
+      { jp: "自分がしたいことをV고 싶어요で書いてみましょう", hint: ex ? "参考: " + ex : "" },
+    ],
+    "지 마세요": [
+      { jp: "「ここで写真を撮らないでください」を韓国語で", hint: "여기서 사진을..." },
+      { jp: "「遅れないでください」を韓国語で", hint: "늦지..." },
+      { jp: "禁止の一文をV지 마세요で書いてみましょう", hint: ex ? "参考: " + ex : "" },
+    ],
+    "ㄹ 수 있": [
+      { jp: "「韓国語が話せます」を韓国語で", hint: "한국어를 할..." },
+      { jp: "「水泳ができません」を韓国語で", hint: "수영을 못..." },
+      { jp: "自分ができること・できないことを書いてみましょう", hint: ex ? "参考: " + ex : "" },
+    ],
+    "아서/어서": [
+      { jp: "「忙しくて行けません」を韓国語で", hint: "바빠서..." },
+      { jp: "「起きて顔を洗います」を韓국語で（動作の順序）", hint: "일어나서..." },
+      { jp: "理由または動作の順序をV아서/어서で書いてみましょう", hint: ex ? "参考: " + ex : "" },
+    ],
+    "때문에": [
+      { jp: "「雨のせいで行けませんでした」を韓国語で", hint: "비 때문에..." },
+      { jp: "「学生なので割引になります」を韓国語で", hint: "학생이라서..." },
+      { jp: "理由・原因をN때문에またはN이라서で書いてみましょう", hint: ex ? "参考: " + ex : "" },
+    ],
+    "면 돼요": [
+      { jp: "「ここに名前を書けばいいです」を韓国語で", hint: "여기에 이름을..." },
+      { jp: "「右に行けばいいです」を韓国語で", hint: "오른쪽으로..." },
+      { jp: "方法・許可をV(으)면 돼요で書いてみましょう", hint: ex ? "参考: " + ex : "" },
+    ],
+    "(으)면": [
+      { jp: "「時間があれば一緒に行きましょう」を韓国語で", hint: "시간이 있으면..." },
+      { jp: "「天気がよければ散歩します」を韓国語で", hint: "날씨가 좋으면..." },
+      { jp: "条件をV/A(으)면で書いてみましょう", hint: ex ? "参考: " + ex : "" },
+    ],
+    "겠어요": [
+      { jp: "「私はビビンバを食べます（注文）」を韓国語で", hint: "저는 비빔밥을..." },
+      { jp: "「明日雨が降るでしょう」を韓国語で", hint: "내일 비가..." },
+      { jp: "意志・推量をV겠어요で書いてみましょう", hint: ex ? "参考: " + ex : "" },
+    ],
+    "아/어 주다": [
+      { jp: "「写真を撮ってください」を韓国語で", hint: "사진을 찍어..." },
+      { jp: "「手伝ってくれてありがとうございます」を韓国語で", hint: "도와줘서..." },
+      { jp: "〜してください/くれるをV아/어 주다で書いてみましょう", hint: ex ? "参考: " + ex : "" },
+    ],
+    "A고 B": [
+      { jp: "「朝起きて顔を洗います」を韓国語で", hint: "아침에 일어나고..." },
+      { jp: "「大きくてきれいです」を韓国語で", hint: "크고..." },
+      { jp: "動作の順序または状態の並列をV/A고で書いてみましょう", hint: ex ? "参考: " + ex : "" },
+    ],
+    "(으)러": [
+      { jp: "「ご飯を食べに食堂に行きます」を韓国語で", hint: "밥 먹으러..." },
+      { jp: "「勉強しに図書館に来ました」を韓国語で", hint: "공부하러..." },
+      { jp: "目的をV(으)러 가다/오다で書いてみましょう", hint: ex ? "参考: " + ex : "" },
+    ],
+    "(으)ㄹ게요": [
+      { jp: "「私がやります」を韓国語で", hint: "제가..." },
+      { jp: "「明日連絡します」を韓国語で", hint: "내일..." },
+      { jp: "意志・約束をV(으)ㄹ게요で書いてみましょう", hint: ex ? "参考: " + ex : "" },
+    ],
+  };
+  for (const key of Object.keys(PATTERN_PROMPTS)) {
+    if (p.includes(key)) return PATTERN_PROMPTS[key];
+  }
+  return [
     { jp: "「私は毎日韓国語を勉強します」を韓国語で", hint: "저는 매일 한국어를..." },
-    { jp: "「友達と公園に行きます」を韓国語で", hint: "친구하고 공원에..." },
-    { jp: `パターン「${p}」を使って自由に1文作ってください`, hint: ex ? `参考: ${ex}` : "" },
+    { jp: "「友達と一緒にカフェに行きます」を韓国語で", hint: "친구하고 카페에..." },
+    { jp: "パターン「" + p + "」を使って自由に1文作ってください", hint: ex ? "参考: " + ex : "" },
   ];
-  return templates;
 }
 
 function startGrammarMode(sessionMode) {
@@ -1172,21 +1250,45 @@ function submitSpecial() {
 function nextSpecial() { startSpecial(currentSpecialCat); }
 
 // ── Vocab ──
-function showVocab() {
-  showScreen("vocab");
-  document.getElementById("vocab-list").innerHTML = items.map(item => {
+function renderVocabItems(list) {
+  const disp = document.getElementById("vocab-count-disp");
+  if (disp) disp.textContent = list.length + "件表示";
+  document.getElementById("vocab-list").innerHTML = list.map(item => {
     const k = item.type==="grammar"?item.pattern:item.korean;
     const j = item.type==="grammar"?item.explanation:item.japanese;
-    const due = isDue(item) ? `<span class="due-tag">復習日</span>` : `<span class="next-tag">${daysUntil(item.nextReview)}日後</span>`;
+    const due = isDue(item) ? `<span class="due-tag">復習日</span>` : `<span class="next-tag">${item.nextReview?daysUntil(item.nextReview)+"日後":"New"}</span>`;
+    const speakK = (k||"").replace(/'/g,"&apos;");
     return `<div class="vocab-item">
       <div class="vocab-main">
-        <span class="korean">${k||""}</span>
+        <span class="korean" onclick="speak('${speakK}')" style="cursor:pointer">${k||""} 🔊</span>
         ${item.reading?`<span class="reading">${item.reading}</span>`:""}
         <span class="japanese">${j||""}</span>
       </div>
       <div class="vocab-srs">${due}<span class="review-count">×${item.reviewCount||0}</span></div>
     </div>`;
   }).join("");
+}
+function showVocab() {
+  showScreen("vocab");
+  const s = document.getElementById("vocab-search");
+  const c = document.getElementById("vocab-cat-filter");
+  if (s) s.value = "";
+  if (c) c.value = "";
+  renderVocabItems(items);
+}
+function filterVocab() {
+  const q = (document.getElementById("vocab-search").value||"").toLowerCase();
+  const cat = document.getElementById("vocab-cat-filter").value;
+  let list = items;
+  if (cat === "grammar") list = list.filter(i => i.type === "grammar");
+  else if (cat === "verb") list = list.filter(i => ["verb","verb_conj","verb_past"].includes(i.category));
+  else if (cat) list = list.filter(i => i.category === cat);
+  if (q) list = list.filter(i => {
+    return (i.korean||i.pattern||"").toLowerCase().includes(q) ||
+           (i.japanese||i.explanation||"").toLowerCase().includes(q) ||
+           (i.reading||"").toLowerCase().includes(q);
+  });
+  renderVocabItems(list);
 }
 
 // ── UI ──
