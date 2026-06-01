@@ -461,11 +461,12 @@ async function deployToGitHub() {
   } catch(e) { return false; }
 }
 
+const FB_URL = "https://korean-study-266ca-default-rtdb.asia-southeast1.firebasedatabase.app";
 if (!localStorage.getItem("kr_uid")) localStorage.setItem("kr_uid", "user_" + Math.random().toString(36).slice(2,10));
 const UID = localStorage.getItem("kr_uid");
 
-async function fbGet(key) { return null; }
-async function fbSet(key, val) {}
+async function fbGet(key) { try { const r = await fetch(`${FB_URL}/${UID}/${key}.json`); return await r.json(); } catch(e) { return null; } }
+async function fbSet(key, val) { try { await fetch(`${FB_URL}/${UID}/${key}.json`, { method:"PUT", headers:{"Content-Type":"application/json"}, body:JSON.stringify(val) }); } catch(e) {} }
 
 // ── Storage ──
 async function load() {
@@ -473,6 +474,14 @@ async function load() {
     const r1 = localStorage.getItem("kr_items"); if (r1) items = JSON.parse(r1);
     const r2 = localStorage.getItem("kr_stats"); if (r2) stats = JSON.parse(r2);
     const r3 = localStorage.getItem("kr_spst");  if (r3) spStreak = parseInt(r3)||0; else spStreak = 0;
+  } catch(e) {}
+  updateHomeUI();
+  try {
+    const fi = await fbGet("items"), fs = await fbGet("stats"), fp = await fbGet("spst");
+    if (fi && Array.isArray(fi) && fi.length > items.length) { items = fi; localStorage.setItem("kr_items", JSON.stringify(fi)); }
+    if (fs) { stats = fs; localStorage.setItem("kr_stats", JSON.stringify(fs)); }
+    if (fp) { spStreak = fp; localStorage.setItem("kr_spst", String(fp)); }
+    if (items.length > 0 && (!fi || fi.length < items.length)) fbSet("items", items);
   } catch(e) {}
   updateHomeUI();
 }
