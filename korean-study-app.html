@@ -498,7 +498,7 @@ function dedupeItems() {
 
 async function loadVocabFromGitHub() {
   try {
-    const res = await fetch("https://raw.githubusercontent.com/naoko705514-blip/korean-study-app/main/vocab.json?t=" + Date.now());
+    const res = await fetch("https://raw.githubusercontent.com/naoko705514-blip/korean-study-app/main/vocab%20all.json?t=" + Date.now());
     if (!res.ok) throw new Error("読み込み失敗: " + res.status);
     const data = await res.json();
     const init = data.map((it,i) => ({...it, id:`${Date.now()}-${i}`, reviewCount:0, nextReview:null, lastReviewed:null}));
