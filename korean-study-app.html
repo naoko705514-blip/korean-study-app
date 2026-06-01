@@ -1,0 +1,634 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0">
+<title>한국어 マスター</title>
+<style>
+* { box-sizing: border-box; margin: 0; padding: 0; }
+body { font-family: 'Noto Sans JP', sans-serif; background: linear-gradient(135deg,#fff5f5,#fff0f9); min-height: 100vh; max-width: 480px; margin: 0 auto; }
+
+.header { background: #c0392b; padding: 16px 20px; display: flex; align-items: center; justify-content: space-between; box-shadow: 0 2px 8px rgba(192,57,43,0.3); position: sticky; top: 0; z-index: 10; }
+.logo { color: #fff; font-size: 22px; font-weight: 800; letter-spacing: 1px; }
+.logo-sub { font-size: 14px; font-weight: 400; opacity: 0.85; }
+.back-btn { background: rgba(255,255,255,0.2); border: none; color: #fff; padding: 6px 14px; border-radius: 20px; font-size: 14px; cursor: pointer; }
+
+.content { padding: 16px; padding-bottom: 40px; }
+.banner { border-radius: 14px; padding: 12px 16px; margin-bottom: 16px; font-size: 14px; font-weight: 600; }
+.banner-due { background: #fff3e0; color: #e65100; }
+.banner-done { background: #e8f5e9; color: #2e7d32; }
+
+.stats-row { display: flex; gap: 10px; margin-bottom: 20px; }
+.stat-card { flex: 1; background: #fff; border-radius: 16px; padding: 14px 8px; text-align: center; box-shadow: 0 2px 8px rgba(0,0,0,0.08); }
+.stat-num { display: block; font-size: 26px; font-weight: 800; color: #c0392b; }
+.stat-label { display: block; font-size: 11px; color: #888; margin-top: 4px; }
+
+.section-title { font-size: 12px; font-weight: 700; color: #aaa; letter-spacing: 1px; text-transform: uppercase; margin-bottom: 10px; }
+
+.quiz-grid { display: flex; gap: 10px; margin-bottom: 24px; }
+.quiz-btn { flex: 1; background: #fff; border: 2px solid #f5c6c2; border-radius: 16px; padding: 16px 8px; cursor: pointer; display: flex; flex-direction: column; align-items: center; gap: 4px; position: relative; box-shadow: 0 2px 8px rgba(0,0,0,0.06); }
+.quiz-btn-icon { font-size: 26px; }
+.quiz-btn-label { font-size: 13px; font-weight: 700; color: #c0392b; }
+.due-badge { position: absolute; top: 6px; right: 6px; background: #c0392b; color: #fff; font-size: 11px; font-weight: 700; border-radius: 10px; padding: 1px 6px; }
+
+.special-header { display: flex; align-items: center; justify-content: space-between; margin-bottom: 10px; }
+.special-grid { display: grid; grid-template-columns: repeat(3,1fr); gap: 10px; margin-bottom: 24px; }
+.special-btn { background: #fff; border: 2px solid #f0e0ff; border-radius: 16px; padding: 14px 8px; cursor: pointer; display: flex; flex-direction: column; align-items: center; gap: 6px; box-shadow: 0 2px 8px rgba(0,0,0,0.06); }
+.special-icon { font-size: 28px; }
+.special-label { font-size: 12px; font-weight: 700; color: #7b2d8b; }
+
+.primary-btn { width: 100%; background: #c0392b; color: #fff; border: none; border-radius: 16px; padding: 16px; font-size: 16px; font-weight: 700; cursor: pointer; margin-bottom: 10px; box-shadow: 0 4px 12px rgba(192,57,43,0.3); }
+.secondary-btn { width: 100%; background: #fff; color: #c0392b; border: 2px solid #f5c6c2; border-radius: 16px; padding: 14px; font-size: 15px; font-weight: 700; cursor: pointer; margin-bottom: 10px; }
+.purple-btn { width: 100%; background: #7b2d8b; color: #fff; border: none; border-radius: 16px; padding: 14px; font-size: 15px; font-weight: 700; cursor: pointer; }
+
+.srs-info { font-size: 12px; color: #aaa; margin-bottom: 10px; display: flex; align-items: center; gap: 8px; }
+.interval-badge { background: #fce4e4; color: #c0392b; padding: 2px 8px; border-radius: 10px; font-size: 11px; font-weight: 700; }
+.purple-badge { background: #f0e0ff; color: #7b2d8b; padding: 2px 8px; border-radius: 10px; font-size: 11px; font-weight: 700; }
+
+.quiz-card { background: #fff; border-radius: 20px; padding: 24px 20px; box-shadow: 0 4px 16px rgba(0,0,0,0.1); margin-bottom: 16px; text-align: center; }
+.quiz-type-tag { background: #fce4e4; color: #c0392b; font-size: 12px; font-weight: 700; padding: 4px 12px; border-radius: 20px; display: inline-block; margin-bottom: 14px; }
+.question-text { font-size: 22px; font-weight: 800; color: #2d2d2d; line-height: 1.5; }
+.hint { font-size: 13px; color: #888; margin-top: 10px; }
+
+.choices-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-bottom: 12px; }
+.choice-btn { background: #fff; border: 2px solid #f5c6c2; border-radius: 14px; padding: 14px 10px; font-size: 16px; font-weight: 700; cursor: pointer; text-align: center; color: #2d2d2d; }
+.choice-btn.correct { background: #e8f5e9; border-color: #4caf50; color: #2e7d32; }
+.choice-btn.wrong { background: #fce4ec; border-color: #e91e63; color: #880e4f; }
+.choice-btn.reveal { background: #e8f5e9; border-color: #4caf50; color: #2e7d32; }
+
+.answer-input { width: 100%; border: 2px solid #f5c6c2; border-radius: 16px; padding: 14px; font-size: 18px; font-family: inherit; outline: none; resize: none; margin-bottom: 12px; }
+.submit-btn { width: 100%; background: #c0392b; color: #fff; border: none; border-radius: 16px; padding: 16px; font-size: 16px; font-weight: 700; cursor: pointer; box-shadow: 0 4px 12px rgba(192,57,43,0.3); }
+.submit-btn:disabled { opacity: 0.4; cursor: not-allowed; }
+
+.result-card { border-radius: 20px; padding: 22px 20px; text-align: center; margin-bottom: 14px; }
+.result-correct { background: #e8f5e9; }
+.result-wrong { background: #fce4ec; }
+.result-icon { font-size: 40px; display: block; }
+.result-label { font-size: 22px; font-weight: 800; margin: 8px 0; }
+.correct-answer { font-size: 16px; color: #555; margin: 8px 0; }
+.next-review { font-size: 13px; color: #888; margin-top: 8px; }
+
+.ref-box { background: #f9f0ff; border-radius: 16px; padding: 14px; margin-bottom: 14px; }
+.ref-title { font-size: 13px; font-weight: 700; color: #7b2d8b; margin-bottom: 10px; }
+.ref-grid { display: grid; grid-template-columns: repeat(3,1fr); gap: 8px; }
+.ref-item { background: #fff; border-radius: 10px; padding: 8px; text-align: center; }
+.ref-korean { display: block; font-size: 16px; font-weight: 700; color: #7b2d8b; }
+.ref-jp { display: block; font-size: 10px; color: #888; margin-top: 2px; }
+
+.vocab-item { background: #fff; border-radius: 14px; padding: 12px 14px; margin-bottom: 8px; box-shadow: 0 1px 4px rgba(0,0,0,0.06); display: flex; justify-content: space-between; align-items: center; }
+.vocab-main { display: flex; flex-wrap: wrap; gap: 6px; align-items: center; flex: 1; }
+.vocab-srs { display: flex; flex-direction: column; align-items: flex-end; gap: 4px; margin-left: 8px; min-width: 48px; }
+.korean { font-size: 17px; font-weight: 700; color: #c0392b; }
+.reading { font-size: 12px; color: #888; background: #f5f5f5; padding: 2px 7px; border-radius: 8px; }
+.japanese { font-size: 13px; color: #555; }
+.due-tag { background: #fff3e0; color: #e65100; font-size: 11px; font-weight: 700; padding: 2px 7px; border-radius: 8px; }
+.next-tag { background: #f5f5f5; color: #aaa; font-size: 11px; padding: 2px 7px; border-radius: 8px; }
+.review-count { font-size: 11px; color: #bbb; }
+
+.import-box { margin-top: 16px; padding: 16px; background: #f9f9f9; border-radius: 16px; border: 2px dashed #f5c6c2; }
+.import-box textarea { width: 100%; border: 2px solid #f5c6c2; border-radius: 12px; padding: 12px; font-size: 13px; font-family: inherit; outline: none; resize: none; margin-bottom: 8px; }
+
+.hidden { display: none !important; }
+</style>
+</head>
+<body>
+<div id="app">
+  <div class="header">
+    <span class="logo">한국어 <span class="logo-sub">マスター</span></span>
+    <div style="display:flex;gap:8px;align-items:center">
+      <button class="back-btn hidden" id="back-btn" onclick="goHome()">← もどる</button>
+      <button id="settings-btn" style="background:rgba(255,255,255,0.2);border:none;color:#fff;padding:6px 10px;border-radius:20px;font-size:16px;cursor:pointer" onclick="showSettings()">⚙️</button>
+    </div>
+  </div>
+
+  <!-- HOME -->
+  <div class="content" id="screen-home">
+    <div id="banner-area"></div>
+    <div class="stats-row">
+      <div class="stat-card"><span class="stat-num" id="stat-streak">0</span><span class="stat-label">🔥 連続正解</span></div>
+      <div class="stat-card"><span class="stat-num" id="stat-accuracy">0%</span><span class="stat-label">📊 正答率</span></div>
+      <div class="stat-card"><span class="stat-num" id="stat-count">0</span><span class="stat-label">📚 単語数</span></div>
+    </div>
+
+    <p class="section-title">テキスト練習</p>
+    <div class="quiz-grid">
+      <button class="quiz-btn" onclick="startQuiz('word')"><span class="quiz-btn-icon">🔤</span><span class="quiz-btn-label">単語</span><span class="due-badge hidden" id="badge-word"></span></button>
+      <button class="quiz-btn" onclick="startQuiz('grammar')"><span class="quiz-btn-icon">📖</span><span class="quiz-btn-label">文法</span><span class="due-badge hidden" id="badge-grammar"></span></button>
+      <button class="quiz-btn" onclick="startQuiz('writing')"><span class="quiz-btn-icon">✍️</span><span class="quiz-btn-label">書き取り</span><span class="due-badge hidden" id="badge-writing"></span></button>
+    </div>
+
+    <div class="special-header">
+      <p class="section-title" style="margin-bottom:0">特訓モード</p>
+      <span style="font-size:13px;font-weight:700;color:#c0392b" id="sp-streak-label">🔥 0連続</span>
+    </div>
+    <div class="special-grid" style="margin-top:10px">
+      <button class="special-btn" onclick="startSpecial('time')"><span class="special-icon">🕐</span><span class="special-label">時刻</span></button>
+      <button class="special-btn" onclick="startSpecial('date')"><span class="special-icon">📅</span><span class="special-label">年月日</span></button>
+      <button class="special-btn" onclick="startSpecial('money')"><span class="special-icon">💰</span><span class="special-label">お金</span></button>
+      <button class="special-btn" onclick="startSpecial('sino')"><span class="special-icon">🔢</span><span class="special-label">漢数字</span></button>
+      <button class="special-btn" onclick="startSpecial('native')"><span class="special-icon">🔤</span><span class="special-label">固有数字</span></button>
+      <button class="special-btn" onclick="startSpecial('counter')"><span class="special-icon">📏</span><span class="special-label">助数詞</span></button>
+    </div>
+
+    <p class="section-title">教材データを登録</p>
+    <button class="secondary-btn" id="vocab-list-btn" onclick="showVocab()" style="display:none">📋 学習リストを見る (<span id="vocab-count">0</span>件)</button>
+    <div class="import-box">
+      <p style="font-size:13px;color:#888;margin-bottom:10px">📌 このチャットに教材の写真を送ると、貼り付け用のJSONが返ってきます</p>
+      <textarea id="json-input" rows="4" placeholder='[{"type":"word","korean":"안녕하세요","reading":"アンニョンハセヨ","japanese":"こんにちは"}]'></textarea>
+      <button class="purple-btn" onclick="importJSON()">📥 登録する</button>
+      <button onclick="dedupeItems()" style="width:100%;background:#fff;color:#e65100;border:2px solid #ffe0b2;border-radius:16px;padding:12px;font-size:14px;font-weight:700;cursor:pointer;margin-top:8px">🧹 重複データを削除する</button>
+    </div>
+  </div>
+
+  <!-- QUIZ -->
+  <div class="content hidden" id="screen-quiz">
+    <div class="srs-info" id="srs-info"></div>
+    <div class="quiz-card">
+      <div class="quiz-type-tag" id="quiz-type-tag"></div>
+      <p class="question-text" id="question-text"></p>
+      <p class="hint hidden" id="hint-text"></p>
+    </div>
+    <!-- 4択 -->
+    <div id="choices-area" class="hidden">
+      <div class="choices-grid" id="choices-grid"></div>
+    </div>
+    <!-- 書き取り -->
+    <div id="writing-area" class="hidden">
+      <textarea class="answer-input" id="answer-input" rows="3" placeholder="ハングルで入力（手書きキーボードOK）" oninput="document.getElementById('submit-btn').disabled=!this.value.trim()"></textarea>
+      <button class="submit-btn" id="submit-btn" onclick="submitWriting()" disabled>回答する</button>
+    </div>
+    <!-- Result -->
+    <div class="hidden" id="result-area">
+      <div class="result-card" id="result-card">
+        <span class="result-icon" id="result-icon"></span>
+        <p class="result-label" id="result-label"></p>
+        <p class="correct-answer" id="correct-answer-text"></p>
+        <p class="next-review" id="next-review-text"></p>
+      </div>
+      <button class="submit-btn" onclick="nextQuiz()">次の問題へ →</button>
+    </div>
+  </div>
+
+  <!-- SPECIAL -->
+  <div class="content hidden" id="screen-special">
+    <div class="srs-info" id="sp-info"></div>
+    <div class="quiz-card">
+      <div class="quiz-type-tag" style="background:#f0e0ff;color:#7b2d8b">特訓</div>
+      <p class="question-text" id="sp-question" style="margin-top:14px"></p>
+      <p class="hint" id="sp-hint" style="margin-top:10px"></p>
+    </div>
+    <div class="ref-box hidden" id="counter-ref">
+      <p class="ref-title">📏 主な助数詞</p>
+      <div class="ref-grid" id="counter-ref-grid"></div>
+    </div>
+    <div id="sp-answer-area">
+      <textarea class="answer-input" id="sp-answer-input" rows="3" placeholder="韓国語で入力（手書きキーボードOK）" oninput="document.getElementById('sp-submit-btn').disabled=!this.value.trim()"></textarea>
+      <button class="submit-btn" id="sp-submit-btn" onclick="submitSpecial()" disabled>回答する</button>
+    </div>
+    <div class="hidden" id="sp-result-area">
+      <div class="result-card" id="sp-result-card">
+        <span class="result-icon" id="sp-result-icon"></span>
+        <p class="result-label" id="sp-result-label"></p>
+        <p class="correct-answer" id="sp-correct-answer"></p>
+      </div>
+      <button class="submit-btn" onclick="nextSpecial()">次の問題へ →</button>
+    </div>
+  </div>
+
+  <!-- VOCAB -->
+  <div class="content hidden" id="screen-vocab">
+    <p class="section-title">学習リスト</p>
+    <div id="vocab-list"></div>
+  </div>
+  <!-- SETTINGS -->
+  <div class="content hidden" id="screen-settings">
+    <p class="section-title">端末の同期設定</p>
+    <div style="background:#fff;border-radius:16px;padding:16px;margin-bottom:12px;box-shadow:0 2px 8px rgba(0,0,0,0.06)">
+      <p style="font-size:13px;color:#888;margin-bottom:10px">📱 この端末のID</p>
+      <p id="uid-display" style="font-size:13px;font-weight:700;color:#2d2d2d;word-break:break-all;background:#f5f5f5;padding:10px;border-radius:10px;margin-bottom:10px"></p>
+      <button onclick="copyUID()" style="width:100%;background:#c0392b;color:#fff;border:none;border-radius:12px;padding:12px;font-size:14px;font-weight:700;cursor:pointer;margin-bottom:8px">📋 IDをコピー</button>
+      <p style="font-size:12px;color:#aaa;text-align:center">2台目の端末でこのIDを入力すると同じデータが使えます</p>
+    </div>
+
+    <div style="background:#fff;border-radius:16px;padding:16px;margin-bottom:12px;box-shadow:0 2px 8px rgba(0,0,0,0.06)">
+      <p style="font-size:13px;color:#888;margin-bottom:10px">🔗 別の端末のIDを入力して同期</p>
+      <input id="uid-input" type="text" placeholder="他の端末のIDをここに貼り付け" style="width:100%;border:2px solid #f5c6c2;border-radius:12px;padding:12px;font-size:14px;outline:none;box-sizing:border-box;margin-bottom:8px">
+      <button onclick="applyUID()" style="width:100%;background:#7b2d8b;color:#fff;border:none;border-radius:12px;padding:12px;font-size:14px;font-weight:700;cursor:pointer">🔄 このIDで同期する</button>
+    </div>
+
+    <div style="background:#fff;border-radius:16px;padding:16px;box-shadow:0 2px 8px rgba(0,0,0,0.06)">
+      <p style="font-size:13px;color:#888;margin-bottom:10px">⚠️ データをリセット</p>
+      <button onclick="resetData()" style="width:100%;background:#fff;color:#e53935;border:2px solid #ffcdd2;border-radius:12px;padding:12px;font-size:14px;font-weight:700;cursor:pointer">🗑️ すべてのデータを削除</button>
+    </div>
+  </div>
+
+</div>
+
+<script>
+// ── Constants ──
+const INTERVALS = [1, 3, 7, 14, 30, 60];
+const nextReviewDate = n => Date.now() + INTERVALS[Math.min(n, INTERVALS.length-1)] * 86400000;
+const isDue = item => !item.nextReview || Date.now() >= item.nextReview;
+const daysUntil = ts => Math.ceil((ts - Date.now()) / 86400000);
+const norm = s => s.trim().replace(/\s+/g, " ");
+
+// ── State ──
+let items = [], stats = {streak:0, total:0, correct:0}, spStreak = 0;
+let currentItem = null, currentQuizType = "", currentQuiz = null;
+let currentSpecialCat = "", currentSpecialQ = null;
+
+// ── Firebase config ──
+const FB_URL = "https://korean-study-266ca-default-rtdb.asia-southeast1.firebasedatabase.app";
+// ユーザーIDをlocalStorageで管理（端末固有だが同じIDでログインすれば共有可）
+if (!localStorage.getItem("kr_uid")) {
+  localStorage.setItem("kr_uid", "user_" + Math.random().toString(36).slice(2,10));
+}
+const UID = localStorage.getItem("kr_uid");
+
+async function fbGet(key) {
+  try {
+    const res = await fetch(`${FB_URL}/${UID}/${key}.json`);
+    return await res.json();
+  } catch(e) { return null; }
+}
+async function fbSet(key, val) {
+  try {
+    await fetch(`${FB_URL}/${UID}/${key}.json`, {
+      method: "PUT",
+      headers: {"Content-Type": "application/json"},
+      body: JSON.stringify(val)
+    });
+  } catch(e) {}
+}
+
+// ── Storage ──
+async function load() {
+  // まずlocalStorageから即時表示
+  try {
+    const r1 = localStorage.getItem("kr_items"); if (r1) items = JSON.parse(r1);
+    const r2 = localStorage.getItem("kr_stats"); if (r2) stats = JSON.parse(r2);
+    const r3 = localStorage.getItem("kr_spst");  if (r3) spStreak = parseInt(r3)||0;
+  } catch(e) {}
+  updateHomeUI();
+  // Firebaseから最新データを取得して上書き
+  const fi = await fbGet("items");
+  const fs = await fbGet("stats");
+  const fp = await fbGet("spst");
+  if (fi) { items = fi; localStorage.setItem("kr_items", JSON.stringify(fi)); }
+  if (fs) { stats = fs; localStorage.setItem("kr_stats", JSON.stringify(fs)); }
+  if (fp) { spStreak = fp; localStorage.setItem("kr_spst", String(fp)); }
+  updateHomeUI();
+}
+const save = () => {
+  localStorage.setItem("kr_items", JSON.stringify(items));
+  fbSet("items", items);
+};
+const saveStats = () => {
+  localStorage.setItem("kr_stats", JSON.stringify(stats));
+  fbSet("stats", stats);
+};
+const saveSpSt = () => {
+  localStorage.setItem("kr_spst", String(spStreak));
+  fbSet("spst", spStreak);
+};
+
+// ── Import ──
+function dedupeItems() {
+  const before = items.length;
+  const seen = new Set();
+  items = items.filter(item => {
+    const key = (item.korean || item.pattern || "") + "|" + (item.japanese || item.explanation || "");
+    if (seen.has(key)) return false;
+    seen.add(key);
+    return true;
+  });
+  save();
+  updateHomeUI();
+  alert(`重複を削除しました。${before}件 → ${items.length}件`);
+}
+
+function importJSON() {
+  const raw = document.getElementById("json-input").value.trim();
+  if (!raw) return;
+  try {
+    const arr = Array.isArray(JSON.parse(raw)) ? JSON.parse(raw) : [JSON.parse(raw)];
+    const init = arr.map((it,i) => ({...it, id:`${Date.now()}-${i}`, reviewCount:0, nextReview:null, lastReviewed:null}));
+    items = [...items, ...init];
+    save();
+    document.getElementById("json-input").value = "";
+    updateHomeUI();
+    alert(`✅ ${init.length}件を登録しました！`);
+  } catch(e) { alert("JSONの形式が正しくありません"); }
+}
+
+// ── Numbers ──
+function toSino(n) {
+  if (n===0) return "영";
+  const u=["","일","이","삼","사","오","육","칠","팔","구"], p=["","십","백","천"];
+  let r="";
+  if (n>=10000) { r+=toSino(Math.floor(n/10000))+"만"; n=n%10000; if(!n) return r; }
+  const s=String(n).padStart(4,"0");
+  for(let i=0;i<4;i++){const d=parseInt(s[i]),pl=3-i;if(!d)continue;r+=(d===1&&pl>0?"":u[d])+p[pl];}
+  return r;
+}
+function toNative(n) {
+  const o=["","하나","둘","셋","넷","다섯","여섯","일곱","여덟","아홉"];
+  const t=["","열","스물","서른","마흔","쉰","예순","일흔","여든","아흔"];
+  if(n<=0||n>99) return String(n);
+  return t[Math.floor(n/10)]+o[n%10];
+}
+
+const COUNTERS = [
+  {word:"시",jp:"時（時刻）",numType:"native",ex:"세 시 (3時)"},
+  {word:"분",jp:"分",numType:"sino",ex:"오 분 (5分)"},
+  {word:"월",jp:"月",numType:"sino",ex:"삼 월 (3月)"},
+  {word:"일",jp:"日",numType:"sino",ex:"십오 일 (15日)"},
+  {word:"년",jp:"年",numType:"sino",ex:"이천이십오 년 (2025年)"},
+  {word:"개",jp:"個",numType:"native",ex:"두 개 (2個)"},
+  {word:"명",jp:"名（人）",numType:"native",ex:"세 명 (3名)"},
+  {word:"분",jp:"方（敬語）",numType:"native",ex:"두 분 (2名様)"},
+  {word:"권",jp:"冊",numType:"native",ex:"한 권 (1冊)"},
+  {word:"잔",jp:"杯",numType:"native",ex:"한 잔 (1杯)"},
+  {word:"병",jp:"本（瓶）",numType:"sino",ex:"두 병 (2本)"},
+  {word:"마리",jp:"匹/羽",numType:"native",ex:"세 마리 (3匹)"},
+  {word:"장",jp:"枚",numType:"native",ex:"네 장 (4枚)"},
+  {word:"대",jp:"台",numType:"native",ex:"한 대 (1台)"},
+  {word:"번",jp:"回/番",numType:"sino",ex:"일 번 (1番)"},
+  {word:"원",jp:"ウォン",numType:"sino",ex:"천 원 (1000ウォン)"},
+];
+
+function makeNumberQ(cat) {
+  if (cat==="sino") { const n=Math.floor(Math.random()*9999)+1; return {q:`${n} を漢数字で`,a:toSino(n),hint:"漢語数詞: 일이삼사오육칠팔구십백천만"}; }
+  if (cat==="native") { const n=Math.floor(Math.random()*99)+1; return {q:`${n} を固有数字で`,a:toNative(n),hint:"固有語数詞: 하나둘셋…열스물서른"}; }
+  if (cat==="time") { const h=Math.floor(Math.random()*12)+1,m=Math.floor(Math.random()*59)+1; return {q:`${h}時${m}分 を韓国語で`,a:`${toNative(h)} 시 ${toSino(m)} 분`,hint:"時は固有数詞・分は漢数詞"}; }
+  if (cat==="date") { const mo=Math.floor(Math.random()*12)+1,d=Math.floor(Math.random()*28)+1,y=2020+Math.floor(Math.random()*6); return {q:`${y}年${mo}月${d}日 を韓国語で`,a:`${toSino(y)} 년 ${toSino(mo)} 월 ${toSino(d)} 일`,hint:"年月日はすべて漢数詞"}; }
+  if (cat==="money") { const aa=[500,1000,2500,5000,10000,15000,30000,50000,100000],am=aa[Math.floor(Math.random()*aa.length)]; return {q:`${am.toLocaleString()}ウォン を韓国語で`,a:`${toSino(am)} 원`,hint:"お金は漢数詞＋원"}; }
+  const c=COUNTERS[Math.floor(Math.random()*COUNTERS.length)],n=Math.floor(Math.random()*9)+1;
+  return {q:`「${n}${c.jp}」を韓国語で`,a:`${c.numType==="native"?toNative(n):toSino(n)} ${c.word}`,hint:`例: ${c.ex}`};
+}
+
+// ── Quiz logic ──
+function pickItem(type) {
+  const pool = type==="word" ? items.filter(i=>i.type==="word") :
+               type==="grammar" ? items.filter(i=>i.type==="grammar") : items;
+  const p = pool.length ? pool : items;
+  const due = p.filter(isDue);
+  const sorted = (due.length ? due : p).slice().sort((a,b)=>(a.nextReview||0)-(b.nextReview||0));
+  return sorted[0];
+}
+
+// Generate 4 choices: 1 correct + 3 random wrong
+function makeChoices(correctItem, type) {
+  const correct = type==="word" ? correctItem.japanese : correctItem.explanation||correctItem.japanese||"";
+  const pool = items.filter(i => {
+    const v = type==="word" ? i.japanese : i.explanation||i.japanese||"";
+    return v && v !== correct;
+  });
+  const wrongs = pool.sort(()=>Math.random()-0.5).slice(0,3).map(i=> type==="word"?i.japanese:i.explanation||i.japanese||"");
+  while (wrongs.length < 3) wrongs.push(["わかりません","ありません","ちがいます"][wrongs.length]);
+  const all = [...wrongs, correct].sort(()=>Math.random()-0.5);
+  return {choices: all, correct};
+}
+
+function startQuiz(type) {
+  if (!items.length) { alert("まず教材データを登録してください"); return; }
+  currentQuizType = type;
+  currentItem = pickItem(type);
+  if (!currentItem) { alert("該当するデータがありません"); return; }
+
+  showScreen("quiz");
+  document.getElementById("result-area").classList.add("hidden");
+  document.getElementById("srs-info").innerHTML =
+    `復習 ${currentItem.reviewCount||0}回目 <span class="interval-badge">次: ${INTERVALS[Math.min(currentItem.reviewCount||0,INTERVALS.length-1)]}日後</span>`;
+
+  if (type === "writing") {
+    // 書き取り: 日本語→ハングル入力
+    currentQuiz = {
+      question: `「${currentItem.japanese||currentItem.explanation||currentItem.exampleJp||""}」をハングルで書いてください`,
+      answer: currentItem.korean || currentItem.pattern || currentItem.example || "",
+      type: "書き取り"
+    };
+    document.getElementById("quiz-type-tag").textContent = "✍️ 書き取り";
+    document.getElementById("question-text").textContent = currentQuiz.question;
+    document.getElementById("hint-text").classList.add("hidden");
+    document.getElementById("choices-area").classList.add("hidden");
+    document.getElementById("writing-area").classList.remove("hidden");
+    document.getElementById("answer-input").value = "";
+    document.getElementById("submit-btn").disabled = true;
+
+  } else if (type === "grammar") {
+    // 文法: パターン→説明 4択
+    currentQuiz = {
+      question: `「${currentItem.pattern||currentItem.korean||""}」の意味は？`,
+      answer: currentItem.explanation||currentItem.japanese||"",
+      type: "文法"
+    };
+    document.getElementById("quiz-type-tag").textContent = "📖 文法";
+    document.getElementById("question-text").textContent = currentQuiz.question;
+    if (currentItem.example) {
+      const h = document.getElementById("hint-text");
+      h.textContent = `例: ${currentItem.example}`;
+      h.classList.remove("hidden");
+    } else document.getElementById("hint-text").classList.add("hidden");
+    document.getElementById("writing-area").classList.add("hidden");
+    renderChoices(currentItem, "grammar");
+
+  } else {
+    // 単語: ハングル→日本語 4択
+    currentQuiz = {
+      question: `「${currentItem.korean||""}」${currentItem.reading?`（${currentItem.reading}）`:""}の意味は？`,
+      answer: currentItem.japanese||"",
+      type: "単語"
+    };
+    document.getElementById("quiz-type-tag").textContent = "🔤 単語";
+    document.getElementById("question-text").textContent = currentQuiz.question;
+    document.getElementById("hint-text").classList.add("hidden");
+    document.getElementById("writing-area").classList.add("hidden");
+    renderChoices(currentItem, "word");
+  }
+}
+
+function renderChoices(item, type) {
+  const {choices, correct} = makeChoices(item, type);
+  currentQuiz.correctChoice = correct;
+  const grid = document.getElementById("choices-grid");
+  grid.innerHTML = choices.map(c =>
+    `<button class="choice-btn" onclick="selectChoice(this,'${c.replace(/'/g,"&#39;")}','${correct.replace(/'/g,"&#39;")}')">${c}</button>`
+  ).join("");
+  document.getElementById("choices-area").classList.remove("hidden");
+}
+
+function selectChoice(btn, selected, correct) {
+  // disable all buttons
+  document.querySelectorAll(".choice-btn").forEach(b => b.onclick = null);
+  const isCorrect = selected === correct;
+  btn.classList.add(isCorrect ? "correct" : "wrong");
+  if (!isCorrect) {
+    document.querySelectorAll(".choice-btn").forEach(b => {
+      if (b.textContent === correct) b.classList.add("reveal");
+    });
+  }
+  updateSRS(isCorrect);
+  setTimeout(() => showResult(isCorrect), 800);
+}
+
+function submitWriting() {
+  const userAns = document.getElementById("answer-input").value.trim();
+  const correct = currentQuiz.answer;
+  const isCorrect = norm(userAns) === norm(correct);
+  document.getElementById("writing-area").classList.add("hidden");
+  updateSRS(isCorrect);
+  showResult(isCorrect);
+}
+
+function updateSRS(isCorrect) {
+  const nc = isCorrect ? (currentItem.reviewCount||0)+1 : Math.max(0,(currentItem.reviewCount||0)-1);
+  items = items.map(it => it.id===currentItem.id ? {...it, reviewCount:nc, nextReview:nextReviewDate(nc), lastReviewed:Date.now()} : it);
+  save();
+  stats.total++; stats.correct += isCorrect?1:0; stats.streak = isCorrect ? stats.streak+1 : 0;
+  saveStats();
+}
+
+function showResult(isCorrect) {
+  document.getElementById("choices-area").classList.add("hidden");
+  document.getElementById("result-area").classList.remove("hidden");
+  const card = document.getElementById("result-card");
+  card.className = "result-card " + (isCorrect?"result-correct":"result-wrong");
+  document.getElementById("result-icon").textContent = isCorrect?"⭕️":"❌";
+  document.getElementById("result-label").textContent = isCorrect?"正解！":"不正解";
+  document.getElementById("correct-answer-text").innerHTML = `正解: <strong>${currentQuiz.answer}</strong>`;
+  const updatedItem = items.find(i=>i.id===currentItem.id);
+  const nd = updatedItem?.nextReview ? daysUntil(updatedItem.nextReview) : 1;
+  document.getElementById("next-review-text").textContent = `📅 次の復習: ${nd<=1?"明日":nd+"日後"}`;
+}
+
+function nextQuiz() { startQuiz(currentQuizType); }
+
+// ── Special ──
+function startSpecial(cat) {
+  currentSpecialCat = cat;
+  currentSpecialQ = makeNumberQ(cat);
+  showScreen("special");
+  const labels = {time:"🕐 時刻",date:"📅 年月日",money:"💰 お金",sino:"🔢 漢数字",native:"🔤 固有数字",counter:"📏 助数詞"};
+  document.getElementById("sp-info").innerHTML = `${labels[cat]} <span class="purple-badge">🔥 ${spStreak}連続</span>`;
+  document.getElementById("sp-question").textContent = currentSpecialQ.q;
+  document.getElementById("sp-hint").textContent = "💡 " + currentSpecialQ.hint;
+  const ref = document.getElementById("counter-ref");
+  if (cat==="counter") {
+    ref.classList.remove("hidden");
+    document.getElementById("counter-ref-grid").innerHTML = COUNTERS.map(c=>
+      `<div class="ref-item"><span class="ref-korean">${c.word}</span><span class="ref-jp">${c.jp}</span></div>`
+    ).join("");
+  } else ref.classList.add("hidden");
+  document.getElementById("sp-answer-area").classList.remove("hidden");
+  document.getElementById("sp-result-area").classList.add("hidden");
+  document.getElementById("sp-answer-input").value = "";
+  document.getElementById("sp-submit-btn").disabled = true;
+}
+
+function submitSpecial() {
+  const userAns = document.getElementById("sp-answer-input").value.trim();
+  const isCorrect = norm(userAns) === norm(currentSpecialQ.a);
+  spStreak = isCorrect ? spStreak+1 : 0;
+  saveSpSt();
+  document.getElementById("sp-answer-area").classList.add("hidden");
+  document.getElementById("sp-result-area").classList.remove("hidden");
+  const card = document.getElementById("sp-result-card");
+  card.className = "result-card " + (isCorrect?"result-correct":"result-wrong");
+  document.getElementById("sp-result-icon").textContent = isCorrect?"⭕️":"❌";
+  document.getElementById("sp-result-label").textContent = isCorrect?"正解！":"不正解";
+  document.getElementById("sp-correct-answer").innerHTML = `正解: <strong>${currentSpecialQ.a}</strong>`;
+  document.getElementById("sp-info").innerHTML = `特訓 <span class="purple-badge">🔥 ${spStreak}連続</span>`;
+}
+function nextSpecial() { startSpecial(currentSpecialCat); }
+
+// ── Vocab ──
+function showVocab() {
+  showScreen("vocab");
+  document.getElementById("vocab-list").innerHTML = items.map(item => {
+    const k = item.type==="grammar"?item.pattern:item.korean;
+    const j = item.type==="grammar"?item.explanation:item.japanese;
+    const due = isDue(item) ? `<span class="due-tag">復習日</span>` : `<span class="next-tag">${daysUntil(item.nextReview)}日後</span>`;
+    return `<div class="vocab-item">
+      <div class="vocab-main">
+        <span class="korean">${k||""}</span>
+        ${item.reading?`<span class="reading">${item.reading}</span>`:""}
+        <span class="japanese">${j||""}</span>
+      </div>
+      <div class="vocab-srs">${due}<span class="review-count">×${item.reviewCount||0}</span></div>
+    </div>`;
+  }).join("");
+}
+
+// ── UI ──
+function showScreen(name) {
+  ["home","quiz","special","vocab","settings"].forEach(s =>
+    document.getElementById("screen-"+s).classList.toggle("hidden", s!==name)
+  );
+  document.getElementById("back-btn").classList.toggle("hidden", name==="home");
+  document.getElementById("settings-btn").classList.toggle("hidden", name!=="home");
+}
+function goHome() { showScreen("home"); updateHomeUI(); }
+
+function updateHomeUI() {
+  const due = items.filter(isDue).length;
+  const ba = document.getElementById("banner-area");
+  ba.innerHTML = due>0 ? `<div class="banner banner-due">🔔 今日の復習 <strong>${due}件</strong> が待っています</div>` :
+    items.length>0 ? `<div class="banner banner-done">✅ 今日の復習はすべて完了！</div>` : "";
+  document.getElementById("stat-streak").textContent = stats.streak||0;
+  document.getElementById("stat-accuracy").textContent = stats.total>0?Math.round(stats.correct/stats.total*100)+"%":"0%";
+  document.getElementById("stat-count").textContent = items.length;
+  document.getElementById("vocab-count").textContent = items.length;
+  document.getElementById("vocab-list-btn").style.display = items.length?"block":"none";
+  document.getElementById("sp-streak-label").textContent = `🔥 ${spStreak}連続`;
+  const wd=items.filter(i=>i.type==="word"&&isDue(i)).length;
+  const gd=items.filter(i=>i.type==="grammar"&&isDue(i)).length;
+  setBadge("badge-word",wd); setBadge("badge-grammar",gd); setBadge("badge-writing",due);
+}
+function setBadge(id,n) {
+  const el=document.getElementById(id);
+  if(n>0){el.textContent=n;el.classList.remove("hidden");}else el.classList.add("hidden");
+}
+
+// ── Settings ──
+function showSettings() {
+  showScreen("settings");
+  document.getElementById("uid-display").textContent = UID;
+  document.getElementById("settings-btn").classList.add("hidden");
+}
+
+function copyUID() {
+  navigator.clipboard.writeText(UID).then(() => {
+    alert("IDをコピーしました！\n2台目の端末のアプリ設定画面に貼り付けてください。");
+  }).catch(() => {
+    // fallback
+    const el = document.getElementById("uid-display");
+    const range = document.createRange();
+    range.selectNode(el);
+    window.getSelection().removeAllRanges();
+    window.getSelection().addRange(range);
+    alert("IDを選択しました。長押しでコピーしてください。");
+  });
+}
+
+async function applyUID() {
+  const newUID = document.getElementById("uid-input").value.trim();
+  if (!newUID) { alert("IDを入力してください"); return; }
+  if (!confirm(`ID: ${newUID}\nこのIDで同期しますか？\n（現在の端末のデータは上書きされます）`)) return;
+  localStorage.setItem("kr_uid", newUID);
+  location.reload();
+}
+
+function resetData() {
+  if (!confirm("すべてのデータを削除しますか？\nこの操作は元に戻せません。")) return;
+  localStorage.clear();
+  items = []; stats = {streak:0,total:0,correct:0}; spStreak = 0;
+  save(); saveStats(); saveSpSt();
+  goHome();
+  alert("データを削除しました");
+}
+
+load();
+</script>
+</body>
+</html>
